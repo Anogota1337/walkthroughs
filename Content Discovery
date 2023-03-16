@@ -1,0 +1,7 @@
+    1.Robots.txt
+To dokument informujący stronę, które rzeczy powinnien wyświetlać.
+    2. Favicon
+To mała ikona wyświetlana na pasku adresu, służaca do promowania strony.
+Kiedy jakiś framework jest wykorzystywany do budowy strony, favicon, który jest częścią instalacji pozostaje.
+Jeśli twórca nie zastąpi go niestandardowym, może to dać nam wskazówkę jaki framerwork jest używany. OWASP hostuje bazę danych wspólnych ikon
+framerworka, których można użyć do porównania. https://wiki.owasp.org/index.php/OWASP_favicon_database 
