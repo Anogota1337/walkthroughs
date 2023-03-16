@@ -1,0 +1,74 @@
+  Task 3. Path Traversal:
+Znana również jako przechodzenie przez katalogi. Umożliwa atakującemu odczytwanie zasobów systemu operacyjnego, takich jak pliki lokalne na serwerze,
+na którym działa aplikacja. 
+Luki związane z przemierzaniem ścieżki występują, gdy dane wejściowe użytkownika są przekazywane do funkcji i takiej jak file_get contents W PHP.
+To nie jest główna przyczyna tej luki, przyczyną luki jest często słaba weryfikacja lub filtrowanie danych wejściowych. W PHP można użyć file_get_contents do
+odczytania zawartości pliku. 
+Jeżeli atakujący znajdzie punkt wejścia, którym w tym przypadku jest get.php?file=, wówczas atakujący może wysłać coś w następujący sposób 
+http://webapp.thm/get.php?file=../../.. /../etc/passwd
+W syystmie Windows wygląda to następująco 
+http://webapp.thm/get.php?file=../../../../boot.ini lub
+http://webapp.thm/get.php?file=../../../../windows/win.ini
+
+  Task 4. Local File Inclusion - LFI:
+Ataki LFI na aplikacje internetowe są często spowodowane brakiem świadmości bezpieczeństwa w programistów. W PHP używanie funkcji, takich jak 
+| include , require , include_once i require_once | 
+
+W tej sekcji będą różne scenariusze LFI i sposoby ich wykorzystania.
+  1. Załóżmy, że aplikacja internetowa udostępnia dwa języki, a użytkownik może wybrać między EN a AR 
+
+      <?PHP 
+        include($_GET["lang"]);
+      ?>
+
+Powyższy kod PHP wykorzystuje żądanie GET za pośrednictwem parametru adresu URL lang w celu dołączenia pliku strony.
+Połączenia można wykonać, wysyłając następujące żądanie HTTP w następujący sposób http://webapp.thm/index.php?lang=EN.php
+Teoretycznie możesz uzyskać dostęp i wyświetlić dowolny czytelny plik na serwerze z powyższego kodu, jeśli nie ma żadnej weryfikacji danych wejściowych.
+Powiedzmy, że chcemy przeczytać plik /etc/passw, możemy spróbować wykonać następujące czyności
+http://webapp.thm/get.php?file=/etc/passwd 
+
+    Odpowidzią na pierwsze pytanie jest: ab1.php?file=/etc/passwd
+
+  2. Następnie w poniższym kodzie programista zdecydował się określić katalog wewnątrz funkcji. 
+
+      <?PHP 
+        include("languages/". $_GET['lang']); 
+      ?>
+
+W powyższym kodzie programista zdecydował się użyć funkcji include do wywoływania stron PHP w katalogu języków tylko za pomocą lang. parametrów.
+Jeśli nie ma sprawdzania poprawności danych wejściowych, osoba atakująca może manipulować adresem URL, zastępując dane wejściowe lang
+innymi plikami wrażliwymi na system operacyjny, takimi jak /etc/passwd
+
+  Task 5. Local File Inclusion - LFI #2 
+W tym zadaniu wchodzimy nieco głębiej w LFI. Omówiliśmy kilka technik obejścia filtra w funkcji dołączania.
+
+  1. W pierwszyhc dwóch przypadkach sprawdziliśmy kod aplikacji internetowej. Jednak w tym przypadku przeprwadzamy testy czarnej skrzynki, w których nie mamy kodu żródłowego.
+W tym scenariuszu mamy następujący punkty wejścia http://webapp.thm/index.php?lang=EN 
+Komunikaty o błędzie zawiera istotne informacje. Wprowadzjąc THM jako dane wejściowe, komunikat o błędzie pokazuje, jak wygląda funckaj dołączenia:
+include(languages/THM.php);
+Jeśli nie udaje nam się wyjść z katalogu, mimo wykonywania poprawnie poleceń, możeb być tak dla tego, że wychodzimy dalej z roszczerzeniem przykładowo .php
+Aby ominąć ten scenariusz, możemy użyć NULL BYTE, czyli %00.
+Używanie bajtów zerowych to technika wstrzykiwania, w której reprezentacja zakodowana w adresie URL, taka jak %00 lub 0x00 w systmie szesnastkowym,
+z danymi dostarczonymi przez użytkownika w celu zakończenia łańcuchów. Można o tym pomyśleć jako o próbie oszukania aplikacji internetowej, aby zignorowało wszystko, co następuje po bajcie zerowym.
+Dodając bajt zerowy na końcu ładunku, informujemy funkcję dołączenia, aby ignorowała wszystko po bajcie zerowym.
+
+include("languages/../../../../../etc/passwd%00").".php"); co odpowiada → include("languages/../../../../../etc/passwd");
+
+UWAGA: sztuczka %00   została naprawiona i nie działa z PHP 5.3.4 i nowszymi.
+  Odpowiedzią na pierwsze pytanie będzie: /lab3.php?file(../../../../etc/passwd%00
+
+  2. W tej sekcji programiści postanowili filtrować słowa kluczowe, aby uniknąć ujawneinia poufnych informacji!
+Plik /etc/passwd jest filtrowany. Po pierwsze, uzywjąc NullBye %00 lub lub sztuczki z bieżącym katalogiem na końcu filtrowanego słowa kluczowego /.
+Exploit będzie podobny do http://webapp.thm/index.php?lang=/etc/passwd/. 
+Odpowiedzią na drugie pytanie będzie:  file_get_contents
+
+  3. Nestępnie w poniższych scenariuszach programista zaczyna używać sprawdzania poprawności danych wejściowych,
+filtrując niektóre słowa kluczowe. 
+Po pierwsze, możemy wysłać następujący ładunek, aby go ominąć: ....//....//....//....//....//etc/passwd 
+
+  4. Na koniec omówimy przypadek, w którym programista wymusza na pliku include odczytywanie ze zdefiniowanego katalogu
+Na przykład jeśli aplikacja internetowa prosi o podanie danych wejściowych, które muszą zawierać katalog, taki jak 
+http://webapp.thm/index.php?lang=languages/EN.php
+
+  Odpowiedzią na trzecie pytanie jest: THM-profile
+  Odpowiedzią na czwarte pytanie jest: 12.04
